@@ -1,0 +1,224 @@
+{
+  "skill_name": "fund-application-workflow",
+  "benchmark_notes": {
+    "goal": "Provide benchmark-ready expectations for routing correctness, schema compliance, evidence discipline, and stage-appropriate placeholder handling.",
+    "global_assertions": [
+      "Output should remain evidence-aware and must not fabricate literature, policies, data, or representative prior work.",
+      "selected_subskill should match the dominant stage implied by the prompt, except full_workflow may legitimately choose the next missing stage.",
+      "Current-stage primary object should be substantively populated; non-current-stage shared state objects may remain empty placeholders.",
+      "Object-shaped placeholders should use {} and list-shaped placeholders should use [].",
+      "Research needs should stay structured and should not be replaced by vague advice like 'go read more literature'.",
+      "The model should not collapse into full prose draft generation when the prompt asks for staged workflow artifacts."
+    ],
+    "placeholder_policy": {
+      "object_fields": [
+        "project_card",
+        "goal_content_bundle",
+        "innovation_bundle",
+        "review_bundle"
+      ],
+      "list_fields": [
+        "questions",
+        "framework",
+        "recommended_writing_order",
+        "priority_revisions",
+        "research_needs"
+      ]
+    }
+  },
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "我准备申报一个省教育厅教改项目，方向是'大模型支持研究生学术写作训练'，现在只有一些零散想法：想结合真实写作任务、反馈循环和教师干预，但还没想清楚研究对象、边界和成果形式。请按 full_workflow 先帮我整理成 project_card，并识别最值得优先补的 research_needs。要求高可靠性，不要直接替我编造研究现状。",
+      "expected_output": "应触发 S1 或 full_workflow 的首步，输出结构化 project_card 雏形、缺失信息、1-3 条高质量 research_needs，以及 evidence_status；不能直接生成完整立项依据正文。",
+      "expected_subskill": [
+        "S1"
+      ],
+      "required_fields": [
+        "selected_subskill",
+        "project_card",
+        "research_needs",
+        "evidence_status"
+      ],
+      "primary_object_assertions": [
+        "project_card should include explicit missing_information, to_be_verified, and inferences.",
+        "project_card should not introduce a duplicated known_information container."
+      ],
+      "forbidden_patterns": [
+        "Do not generate full proposal prose such as a finished 立项依据 section.",
+        "Do not present guessed research status as verified fact."
+      ],
+      "pass_criteria": [
+        "The response clearly behaves like S1 kickoff inside full_workflow.",
+        "research_needs count stays within 1-3 and is evidence-oriented.",
+        "Later-stage bundles may remain empty placeholders without penalty."
+      ],
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "下面是我现有的项目底稿：项目主题是'基于真实论文修订过程的大模型辅助科研写作支持'，对象是高校青年教师，团队有 NLP 和写作教学背景，但还缺研究问题边界、评估指标和实验场景。请按 clarify_gaps 输出最多 5 个最关键问题，并区分哪些应该问我、哪些应该转成 research_needs。evidence_mode=strict。",
+      "expected_output": "应触发 S2，输出具体可回答的问题列表，并把研究趋势、评估指标、同类系统比较等需要外部证据的缺口转成结构化 research_needs。",
+      "expected_subskill": [
+        "S2"
+      ],
+      "required_fields": [
+        "selected_subskill",
+        "questions",
+        "research_needs",
+        "evidence_status"
+      ],
+      "primary_object_assertions": [
+        "questions should be concrete, answerable, and not repeat information already present in the prompt.",
+        "questions count should not exceed 5."
+      ],
+      "forbidden_patterns": [
+        "Do not convert every gap into a user question when some clearly require literature or policy evidence.",
+        "Do not ask vague questions that lack an explicit purpose or usage."
+      ],
+      "pass_criteria": [
+        "The response distinguishes user-answerable gaps from research-driven gaps.",
+        "At least one evidence-heavy gap is converted into structured research_needs when warranted by the prompt."
+      ],
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "我要写一个校级科研项目申请书，题目暂定为'面向高校教师科研写作的智能交互支持机制研究'。已有 project_card，但还没有正式框架。请按 build_outline 帮我生成章节蓝图、推荐写作顺序，并指出哪些章节因为证据不足还不适合直接起草。",
+      "expected_output": "应触发 S3，输出覆盖立项依据、研究目标与内容、创新点、研究方案、研究基础、预期成果等章节的 framework，并标出 ready_to_draft 和相关 research_needs。",
+      "expected_subskill": [
+        "S3"
+      ],
+      "required_fields": [
+        "selected_subskill",
+        "framework",
+        "recommended_writing_order",
+        "research_needs",
+        "evidence_status"
+      ],
+      "primary_object_assertions": [
+        "framework should cover the main proposal sections and include ready_to_draft judgments.",
+        "recommended_writing_order may coexist with framework order and should not be treated as duplication."
+      ],
+      "forbidden_patterns": [
+        "Do not mark every section ready_to_draft when evidence gaps are explicit.",
+        "Do not replace the outline with a finished proposal draft."
+      ],
+      "pass_criteria": [
+        "The output distinguishes between structurally writable sections and sections blocked by evidence gaps.",
+        "A mix of ready and not-ready sections is acceptable and often desirable."
+      ],
+      "files": []
+    },
+    {
+      "id": 4,
+      "prompt": "我现在最卡的是'研究目标与研究内容'。项目大意是：构建一个支持高校教师科研写作选题、提纲、修订和反馈整合的交互式系统，并研究其对写作效率和质量的影响。请按 expand_goals，把它展开成总目标、分目标、任务模块和可直接进入申请书的整合段落，同时指出还需要补哪些方法或评估依据。",
+      "expected_output": "应触发 S4，输出 overall_goal、sub_goals、content_modules、integrated_paragraph，并识别方法依据、评估方式、成功案例等相关 research_needs。",
+      "expected_subskill": [
+        "S4"
+      ],
+      "required_fields": [
+        "selected_subskill",
+        "goal_content_bundle",
+        "research_needs",
+        "evidence_status"
+      ],
+      "primary_object_assertions": [
+        "goal_content_bundle should use fixed names: overall_goal, sub_goals, content_modules, integrated_paragraph, design_risks.",
+        "design_risks should be allowed and should not be penalized as negative noise."
+      ],
+      "forbidden_patterns": [
+        "Do not rewrite research significance as overall_goal.",
+        "Do not rewrite technical route as if it were research content modules."
+      ],
+      "pass_criteria": [
+        "The output turns the idea into evaluable goals and modules rather than vague ambition statements.",
+        "Method and evaluation gaps are externalized into research_needs when evidence is missing."
+      ],
+      "files": []
+    },
+    {
+      "id": 5,
+      "prompt": "下面是我目前概括的项目内容：研究大模型如何支持高校教师在选题、文献整合、初稿生成、修订反馈中的连续写作过程，并设计一个交互式支持系统。请按 extract_innovations 提炼 2 到 4 条可辩护创新点，不要把热门技术本身当创新点；如果某条创新点站不住，请明确标风险并告诉我缺什么对比文献。",
+      "expected_output": "应触发 S5，输出 innovation_bundle，创新点必须建立在与已有工作差异上，并包含 risk_alert 与对比文献型 research_needs。",
+      "expected_subskill": [
+        "S5"
+      ],
+      "required_fields": [
+        "selected_subskill",
+        "innovation_bundle",
+        "research_needs",
+        "evidence_status"
+      ],
+      "primary_object_assertions": [
+        "innovation_bundle should use innovations as the only main list, plus overall_innovation_positioning.",
+        "Each innovation should include statement, supporting_basis, and risk_alert."
+      ],
+      "forbidden_patterns": [
+        "Do not treat 'using LLMs' or 'using hot technology' as sufficient innovation by itself.",
+        "Do not pass the eval merely by producing 2-4 items if they lack defensible difference from prior work."
+      ],
+      "pass_criteria": [
+        "The output marks uncertainty explicitly when innovation claims still need comparative literature.",
+        "At least one research_need should focus on comparative or related-work validation if the prompt lacks evidence."
+      ],
+      "files": []
+    },
+    {
+      "id": 6,
+      "prompt": "我已经写了一版摘要：'本项目拟面向高校教师科研写作场景，构建基于大模型的智能辅助平台，提升写作效率与成果质量，并形成可推广的教学与科研支持方案。'请按 review_draft 模拟评审，从创新性、目标与方法闭环、研究基础与可行性三个视角指出主要问题、风险等级和优先修订项。若有问题需要靠补文献或政策数据解决，请直接转成 research_needs。",
+      "expected_output": "应触发 S6，至少模拟三类 reviewer，输出 strengths、major_issues、risk_level、priority_revisions，并把可通过补证据解决的问题转成 research_needs。",
+      "expected_subskill": [
+        "S6"
+      ],
+      "required_fields": [
+        "selected_subskill",
+        "review_bundle",
+        "priority_revisions",
+        "research_needs",
+        "evidence_status"
+      ],
+      "primary_object_assertions": [
+        "review_bundle should include at least three reviewer perspectives: innovation, goal-method closure, and feasibility/foundation.",
+        "priority_revisions should translate review findings into actionable next steps."
+      ],
+      "forbidden_patterns": [
+        "Do not give only generic praise/criticism without concrete issues.",
+        "Do not pretend every problem can be solved only by adding citations when some are structural design flaws."
+      ],
+      "pass_criteria": [
+        "The review is specific and action-oriented.",
+        "It is acceptable for evidence_status.overall to remain partially_verified because the judgment is partly structural rather than purely factual."
+      ],
+      "files": []
+    },
+    {
+      "id": 7,
+      "prompt": "我们刚收到内部预审意见，主要问题有三条：一是'创新点写得像功能堆砌'，二是'缺少近五年国内外相关系统对比'，三是'研究内容和技术路线边界不清'。请按 revise_after_review 帮我梳理优先修订重点，并判断哪些问题要回到 clarify_gaps、expand_goals、extract_innovations。还请生成对应的 research_needs。",
+      "expected_output": "应以 S6 为主进行修订编排，并根据问题回路由到 S2、S4、S5；输出 priority_revisions、需要回溯的子技能方向，以及结构化 research_needs。",
+      "expected_subskill": [
+        "S6"
+      ],
+      "required_fields": [
+        "selected_subskill",
+        "review_bundle",
+        "priority_revisions",
+        "research_needs",
+        "evidence_status"
+      ],
+      "primary_object_assertions": [
+        "The response should keep S6 as the dominant subskill while making explicit which issues must flow back to S2, S4, and/or S5.",
+        "priority_revisions should impose a revision order rather than listing disconnected fixes."
+      ],
+      "forbidden_patterns": [
+        "Do not respond as if revise_after_review were just another fresh review_draft pass with no routing guidance.",
+        "Do not jump straight into rewriting prose without first clarifying revision sequence and back-routing."
+      ],
+      "pass_criteria": [
+        "The output explicitly identifies cross-stage routing or backflow targets.",
+        "Research needs are tied to the blocked revision path, especially comparative literature and structure-boundary evidence."
+      ],
+      "files": []
+    }
+  ]
+}
