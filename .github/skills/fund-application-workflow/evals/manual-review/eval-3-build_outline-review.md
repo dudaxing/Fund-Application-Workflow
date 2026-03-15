@@ -2,7 +2,7 @@
 
 ## Eval Prompt
 
-我要写一个校级科研项目申请书，题目暂定为“面向高校教师科研写作的智能交互支持机制研究”。已有 project_card，但还没有正式框架。请按 build_outline 帮我生成章节蓝图、推荐写作顺序，并指出哪些章节因为证据不足还不适合直接起草。
+我要写一个校级科研项目申请书，题目暂定为"面向高校教师科研写作的智能交互支持机制研究"。已有 project_card，但还没有正式框架。请按 build_outline 帮我生成章节蓝图、推荐写作顺序，并指出哪些章节因为证据不足还不适合直接起草。
 
 ## Manual Output
 
@@ -20,7 +20,7 @@
       "section_goal": "说明高校教师科研写作支持的现实需求、现有研究进展、主要不足以及本项目的切入点。",
       "available_materials": [
         "项目主题已明确聚焦高校教师科研写作支持",
-        "已有‘智能交互支持机制’这一方向性定位"
+        "已有'智能交互支持机制'这一方向性定位"
       ],
       "missing_materials": [
         "近五年国内外相关系统或研究综述",
@@ -196,7 +196,7 @@
         "must_include_source_for_key_claims": true,
         "preferred_citation_granularity": "至少提供作者、年份、题目、来源；如可行，补充 DOI、链接或项目编号"
       },
-      "suggested_prompt": "请仅基于当前 notebook 已收录的 sources 回答，不要引入外部资料。请围绕‘科研写作支持项目的评价设计、实施条件与可行性依据’完成以下任务：1. 提取最直接相关研究或案例；2. 总结已证实的评价设计和实施条件；3. 归纳哪些依据可直接用于研究方案与可行性章节；4. 明确证据不足部分；5. 给出可追溯出处。若 notebook 内证据不足，请明确指出哪些部分需要转外部 deep research。",
+      "suggested_prompt": "请仅基于当前 notebook 已收录的 sources 回答，不要引入外部资料。请围绕'科研写作支持项目的评价设计、实施条件与可行性依据'完成以下任务：1. 提取最直接相关研究或案例；2. 总结已证实的评价设计和实施条件；3. 归纳哪些依据可直接用于研究方案与可行性章节；4. 明确证据不足部分；5. 给出可追溯出处。若 notebook 内证据不足，请明确指出哪些部分需要转外部 deep research。",
       "expected_use": "用于研究方案、研究基础与可行性章节。"
     }
   ],
@@ -222,9 +222,9 @@
 - Writing-order usefulness: Pass
 - Evidence discipline: Pass
 - Residual issues:
-  - `recommended_writing_order` 与 `framework[].order` 可以同时存在：前者服务写作推进，后者服务章节蓝图排序；后续 benchmark 不应误判为重复字段。
-  - `ready_to_draft=true` 的章节在实际使用时仍需配合 `evidence_status` 阅读，不能被理解成已可直接写成事实性正文。
-  - 若后续做自动 benchmark，需要允许 `framework` 中同时出现 ready 和 not-ready 章节，这恰恰是该子技能应做出的区分。
+ - `recommended_writing_order` 与 `framework[].order` 可以同时存在：前者服务写作推进，后者服务章节蓝图排序；后续 benchmark 不应误判为重复字段。
+ - `ready_to_draft=true` 的章节在实际使用时仍需配合 `evidence_status` 阅读，不能被理解成已可直接写成事实性正文。
+ - 若后续做自动 benchmark，需要允许 `framework` 中同时出现 ready 和 not-ready 章节，这恰恰是该子技能应做出的区分。
 
 ## Verdict
 

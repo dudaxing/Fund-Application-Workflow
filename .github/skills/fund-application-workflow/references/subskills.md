@@ -10,6 +10,7 @@
 - `expand_goals` -> S4
 - `extract_innovations` -> S5
 - `review_draft` -> S6
+- `draft_section` -> S7
 - `revise_after_review` -> 以 S6 为主，必要时回到 S2、S4、S5
 - `full_workflow` -> 自动判断：
   - 无 `project_card` -> S1
@@ -17,26 +18,27 @@
   - 无 `framework` -> S3
   - 无 `goal_content_bundle` -> S4
   - 无 `innovation_bundle` -> S5
-  - 有初稿、摘要或章节文本 -> S6
+  - 有初稿、摘要或章节文本需审查 -> S6
+  - framework 已就绪且有章节标记为 ready_to_draft -> S7
 
 ### Step 2: Decide Retrieval Route
 
-#### 何时用 `notebooklm_query`
+#### 何时用 `internal`
 
-- 主题明显属于用户已收集、已导入 notebook 的资料范围
-- 任务更适合从已有 sources 中提取、比较、综合、核验
-- 目标是"从已有资料里找依据"，而不是新增资料
+- 主题属于用户已收集、已导入资料库的范围
+- 任务是从已有资料中提取、比较、综合、核验
+- 目标是"从已有资料里找依据"
 
-#### 何时用 `external_deep_research`
+#### 何时用 `external`
 
-- 主题要求最新文献、最新政策、最新趋势、最新案例，而 notebook 未必具备
-- 当前明显缺乏相关 sources
-- 目标是补新资料，而不是整理旧资料
+- 需要最新文献、最新政策、最新趋势、最新案例
+- 当前明显缺乏相关资料
+- 目标是补新资料
 
 #### 何时用 `either`
 
-- 先建议在 notebook 内核验已有资料
-- 若证据仍不足，再转外部 deep research
+- 先建议在已有资料中核验
+- 若证据仍不足，再转外部检索
 
 ## S1 项目信息梳理器
 
@@ -61,26 +63,7 @@
 
 ```json
 {
-  "project_card": {
-    "project_name": "",
-    "project_type": "",
-    "project_theme": "",
-    "research_object": [],
-    "core_problem": "",
-    "scope_boundary": [],
-    "possible_goals": [],
-    "possible_methods": [],
-    "existing_foundation": [],
-    "expected_outputs": [],
-    "project_preliminary_positioning": {
-      "direction": "",
-      "type_guess": "",
-      "maturity_level": "idea|outline|draft|revision"
-    },
-    "missing_information": [],
-    "to_be_verified": [],
-    "inferences": []
-  },
+  "project_card": { "...见 schemas.md" },
   "research_needs": []
 }
 ```
@@ -88,8 +71,8 @@
 ### Behavior
 
 1. 只整理，不编造。
-2. 核心已知信息直接写入 `project_card` 顶层字段，不再复制到语义重复的 `known_information` 容器里。
-3. 把诊断性内容分成缺失、待核实、推断。
+2. 核心已知信息直接写入 `project_card` 顶层字段。
+3. 诊断性内容分成 `missing_information`、`to_be_verified`、`inferences`。
 4. 若关键背景、领域现状、需求证据缺失，生成 `research_needs`。
 5. `evidence_mode = strict` 时，优先提出高质量资料需求，而不是替用户补事实。
 
@@ -131,7 +114,7 @@
 ### Behavior
 
 1. 先判断哪些缺口该问用户，哪些缺口该转成调研。
-2. 对最新研究趋势、方法比较、评价指标、政策数据、同类方案，优先生成 `research_needs`。
+2. 对研究趋势、方法比较、评价指标、政策数据、同类方案，优先生成 `research_needs`。
 3. 不重复追问 `project_card` 里已有信息。
 4. 问题必须具体、可直接回答。
 
@@ -179,14 +162,14 @@
 ### Behavior
 
 1. 若项目类型不明确，采用通用科研项目结构。
-2. 章节至少覆盖：立项依据、研究目标与研究内容、创新点、技术路线或研究方案、研究基础、预期成果与进度（如适用）。
-3. 对立项依据、研究现状、创新点、技术路线中证据不足的部分输出 `research_needs`。
+2. 章节至少覆盖：立项依据、研究目标与研究内容、创新点、技术路线或研究方案、研究基础、预期成果与进度。
+3. 对证据不足的部分输出 `research_needs`。
 
 ## S4 研究目标与研究内容展开器
 
 ### Goal
 
-把模糊设想转成"总目标—分目标—任务模块—整合段落"，并识别方法与设计支撑所需的外部证据。
+把模糊设想转成"总目标—分目标—任务模块—整合段落"，并识别方法与设计支撑所需的外部证据。可附带生成研究内容模块关系图。
 
 ### Input
 
@@ -204,26 +187,9 @@
 
 ```json
 {
-  "goal_content_bundle": {
-    "overall_goal": "",
-    "sub_goals": [
-      {
-        "sub_goal": "",
-        "related_tasks": [],
-        "expected_result": ""
-      }
-    ],
-    "content_modules": [
-      {
-        "module_name": "",
-        "module_purpose": "",
-        "module_relation": ""
-      }
-    ],
-    "integrated_paragraph": "",
-    "design_risks": []
-  },
-  "research_needs": []
+  "goal_content_bundle": { "...见 schemas.md" },
+  "research_needs": [],
+  "diagrams": []
 }
 ```
 
@@ -232,8 +198,9 @@
 1. 目标必须具体、可执行、可评审。
 2. 不把研究意义写成研究目标。
 3. 不把技术路线写成研究内容。
-4. `overall_goal`、`sub_goals`、`content_modules` 使用固定命名，不再为同一含义创建平行字段。
-5. 如目标与任务设计缺少方法依据、成功案例、评估方式，则生成 `research_needs`，并在 `design_risks` 中显式记录主要设计风险。
+4. 使用 `overall_goal`、`sub_goals`、`content_modules` 固定命名。
+5. 如目标与任务设计缺少方法依据，生成 `research_needs`，并在 `design_risks` 中记录风险。
+6. 若内容模块关系复杂，可生成 `diagrams`（Mermaid mindmap 或 graph）。
 
 ## S5 创新点提炼器
 
@@ -257,18 +224,7 @@
 
 ```json
 {
-  "innovation_bundle": {
-    "innovations": [
-      {
-        "title": "",
-        "innovation_type": "problem|object|method|mechanism|data|scenario|integration",
-        "statement": "",
-        "supporting_basis": [],
-        "risk_alert": ""
-      }
-    ],
-    "overall_innovation_positioning": ""
-  },
+  "innovation_bundle": { "...见 schemas.md" },
   "research_needs": []
 }
 ```
@@ -278,9 +234,8 @@
 1. 创新点必须建立在与已有工作的差异之上。
 2. 不把工作量、热门技术、应用价值当创新点。
 3. 对每条创新点判断最可能被评审质疑的点。
-4. `innovations` 使用固定列表命名，不再并行创建同义容器。
-5. 若创新点可辩护性不足，优先输出对比文献型 `research_needs`。
-6. `evidence_mode = strict` 时，若无材料支撑，必须显式标记风险。
+4. 若创新点可辩护性不足，优先输出对比文献型 `research_needs`。
+5. `evidence_mode = strict` 时，若无材料支撑，必须显式标记风险。
 
 ## S6 评审意见模拟器
 
@@ -305,17 +260,7 @@
 
 ```json
 {
-  "review_bundle": {
-    "reviewers": [
-      {
-        "reviewer_focus": "",
-        "strengths": [],
-        "major_issues": [],
-        "risk_level": "low|medium|high"
-      }
-    ],
-    "overall_judgement": ""
-  },
+  "review_bundle": { "...见 schemas.md" },
   "priority_revisions": [
     {
       "revision_item": "",
@@ -331,6 +276,69 @@
 
 1. 默认至少模拟三类 reviewer：问题与创新性、目标与方法闭环、研究基础与可行性。
 2. 审稿意见必须具体、可操作。
-3. `reviewers` 与 `overall_judgement` 使用固定命名，不再并行创建语义重复的评审容器。
-4. 若问题可通过补文献、政策、案例、方法证据解决，则转成 `research_needs`。
-5. 若问题属于结构性设计缺陷，不要伪装成"补几篇文献就能解决"。
+3. 若问题可通过补证据解决，转成 `research_needs`。
+4. 若问题属于结构性设计缺陷，不伪装成"补几篇文献就能解决"。
+
+## S7 正文撰写器
+
+### Goal
+
+基于已有中间产物（`project_card`、`framework`、`goal_content_bundle`、`innovation_bundle` 等），按章节生成可直接用于申报书的中文正文。
+
+### Input
+
+```json
+{
+  "project_card": {},
+  "framework": [],
+  "goal_content_bundle": {},
+  "innovation_bundle": {},
+  "review_bundle": {},
+  "target_section": "",
+  "evidence_mode": "strict|normal",
+  "word_limit": 0,
+  "style_reference": ""
+}
+```
+
+### Output
+
+```json
+{
+  "section_draft": {
+    "target_section": "",
+    "prose": "",
+    "word_count": 0,
+    "citation_placeholders": [
+      {
+        "location": "",
+        "needed_citation": ""
+      }
+    ],
+    "evidence_gaps": []
+  },
+  "evidence_status": {},
+  "diagrams": []
+}
+```
+
+### Behavior
+
+1. **只写 `target_section` 指定的章节**，不跨章节扩散。
+2. **优先使用已有中间产物**中的信息。`goal_content_bundle.integrated_paragraph` 可作为研究目标与内容章节的起点；`innovation_bundle.innovations` 可作为创新点章节的骨架。
+3. **事实性表述必须有据**。若某处需要引用但当前无来源，在正文中标记 `[待补引用: 主题]`，并记入 `citation_placeholders`。
+4. **不虚构文献、数据、政策**。若材料不足以支撑完整章节，写到可写的部分为止，剩余用 `evidence_gaps` 标记。
+5. **语言风格**：正式学术中文，符合基金申报书的表述惯例。避免口语化、营销化表达。若用户通过 `style_reference` 提供了范文片段，对齐其风格。
+6. **字数控制**：若 `word_limit > 0`，正文长度控制在目标字数 ±10% 范围内。若 `word_limit = 0`，参考 `framework` 中该章节的 `recommended_word_count`。
+7. **可视化生成**：若当前章节是"技术路线"或"研究方案"，自动生成对应的 Mermaid 流程图并放入 `diagrams`；若是"预期成果与进度"，可生成甘特图。
+
+### 各章节撰写要点
+
+| 章节 | 主要依据 | 要点 |
+|------|---------|------|
+| 立项依据 | `project_card.core_problem`, `research_needs` 的调研结果 | 从现实需求出发，经研究现状分析，导向本项目切入点。事实性表述必须有据。 |
+| 研究目标与研究内容 | `goal_content_bundle` | 可直接使用 `integrated_paragraph` 为起点，补充细节和过渡。不混入研究意义。 |
+| 创新点 | `innovation_bundle` | 每条创新点转为一段论证性文字，包含"相比已有工作的差异 → 本项目的做法 → 预期价值"。 |
+| 技术路线 / 研究方案 | `goal_content_bundle.content_modules`, `framework` | 按模块展开方法、步骤、验证逻辑。附 Mermaid 流程图。 |
+| 研究基础与可行性 | `project_card.existing_foundation` | 团队积累、已有成果、实施条件。不要编造。 |
+| 预期成果与进度 | `framework`, `project_card.expected_outputs` | 成果形式、考核指标、阶段划分。可附甘特图。 |

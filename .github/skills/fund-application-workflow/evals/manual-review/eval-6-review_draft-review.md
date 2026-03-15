@@ -180,9 +180,9 @@
 - Actionability: Pass
 - Evidence discipline: Pass
 - Residual issues:
-  - 该输出在无完整草稿条件下，评审深度合理，但仍偏摘要级，后续要结合更长文本复核。
-  - 若正式做自动 benchmark，需要明确允许 `evidence_status.overall = partially_verified`，因为这里的评审问题并非全部依赖外部事实本身。
-  - `review_bundle` 已符合 canonical schema；`goal_content_bundle` 与 `innovation_bundle` 留空是因为本样例专门验证 S6，不强行补写其他阶段对象。
+ - 该输出在无完整草稿条件下，评审深度合理，但仍偏摘要级，后续要结合更长文本复核。
+ - 若正式做自动 benchmark，需要明确允许 `evidence_status.overall = partially_verified`，因为这里的评审问题并非全部依赖外部事实本身。
+ - `review_bundle` 已符合 canonical schema；`goal_content_bundle` 与 `innovation_bundle` 留空是因为本样例专门验证 S6，不强行补写其他阶段对象。
 
 ## Verdict
 

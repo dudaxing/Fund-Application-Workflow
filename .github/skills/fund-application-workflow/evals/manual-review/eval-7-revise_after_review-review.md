@@ -176,8 +176,8 @@
 - Revision prioritization: Pass
 - Evidence discipline: Pass
 - Residual issues:
-  - 该样例已经体现应回到 S2、S4、S5，但如果后续要做自动 benchmark，需要把"是否指出回流路径"也纳入断言范围。
-  - 当前 `questions` 留空是合理的，因为本样例更偏修订编排；如果在真实运行中信息缺口更大，也可能同时产出追问问题。
+ - 该样例已经体现应回到 S2、S4、S5，但如果后续要做自动 benchmark，需要把"是否指出回流路径"也纳入断言范围。
+ - 当前 `questions` 留空是合理的，因为本样例更偏修订编排；如果在真实运行中信息缺口更大，也可能同时产出追问问题。
 
 ## Verdict
 

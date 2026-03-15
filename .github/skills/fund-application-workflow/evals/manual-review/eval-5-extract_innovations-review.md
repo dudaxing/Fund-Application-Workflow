@@ -157,8 +157,8 @@
 - Risk marking discipline: Pass
 - Evidence discipline: Pass
 - Residual issues:
-  - 当前三条创新点都仍依赖后续文献核验，自动 benchmark 不能把'创新点数量够了'误判为通过。
-  - 若实际运行时已有 `related_work_summary`，输出还应进一步引用这些现有材料，而不是只给方向性判断。
+ - 当前三条创新点都仍依赖后续文献核验，自动 benchmark 不能把'创新点数量够了'误判为通过。
+ - 若实际运行时已有 `related_work_summary`，输出还应进一步引用这些现有材料，而不是只给方向性判断。
 
 ## Verdict
 

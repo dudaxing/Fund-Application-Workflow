@@ -1,12 +1,12 @@
 ---
 name: fund-application-workflow
-description: Plan, research, structure, draft, review, and revise Chinese grant applications, project proposals, and research plans. Use this skill whenever the user is preparing a 基金申报书、项目申请书、研究计划书、教改项目申报书、横向课题 proposal, or any formal research-oriented application document, especially when they need to turn scattered ideas into a project card, identify evidence gaps, generate NotebookLM or deep-research prompts, build an outline, expand goals and research content, extract defensible innovations, or simulate reviewer feedback.
+description: Plan, research, structure, draft, review, and revise Chinese grant applications, project proposals, and research plans. Use this skill whenever the user is preparing a 基金申报书、项目申请书、研究计划书、教改项目申报书、横向课题 proposal, or any formal research-oriented application document.
 argument-hint: task_type + project context or current draft
 ---
 
 # 基金申报全流程协同写作 Skill
 
-这个 skill 是一个顶层总控 skill，不是一次性自动写完整篇申报书的正文生成器。它负责把零散想法逐步推进为可辩护、可补证据、可修订的项目申报底稿。
+这个 skill 负责把零散想法逐步推进为可提交的项目申报书。它覆盖从想法梳理到正文撰写的完整流程，包括 7 个子技能（S1-S7），支持跨轮次状态持久化和可视化输出。
 
 ## 何时使用
 
@@ -14,163 +14,184 @@ argument-hint: task_type + project context or current draft
 
 - 用户要准备基金、科研、教改、合作课题或其他正式 proposal 类文档
 - 用户只有模糊想法，需要先梳理项目主题、对象、问题、目标、方法、基础和产出
-- 用户需要先识别缺失信息，再决定哪些问题该问用户，哪些问题该转成调研任务
-- 用户需要生成 NotebookLM 可直接使用的查询 prompt，或外部 deep research prompt
-- 用户需要搭建申报书框架，而不是立刻生成完整正文
-- 用户需要展开研究目标、研究内容、任务模块、技术路线边界
-- 用户需要提炼创新点，并验证这些创新点是否真正建立在与已有工作的差异之上
-- 用户需要从评审视角识别草稿硬伤、优点、风险和优先修订项
+- 用户需要识别缺失信息，区分哪些该追问用户、哪些该转成调研任务
+- 用户需要搭建申报书框架或展开研究目标、研究内容、任务模块
+- 用户需要提炼创新点，并验证其是否建立在与已有工作的差异之上
+- 用户需要从评审视角识别草稿硬伤，或模拟评审意见
+- 用户需要按章节撰写申报书正文，包括立项依据、研究内容、创新点等
+- 用户需要生成技术路线图、研究进度图等可视化内容
 
 ## 总体原则
 
 ### 1. 证据优先
 
-- 涉及研究现状、发展趋势、政策、数据、方法比较、创新性判断、代表性工作、研究空白、效果判断时，必须基于可靠来源。
-- 不得编造事实、文献、出处、数据、引文、政策依据、项目案例或所谓"已有研究结论"。
-- 证据不足时，必须明确标注"证据不足"或"待核实"，不要把猜测写成事实。
-- 默认区分三类内容：已证实信息、基于资料的归纳、推断性判断。
-- 若当前任务仍缺外部调研，不要把"可能如此"的内容写成"已经证实"的表述。
+- 涉及研究现状、发展趋势、政策、数据、方法比较、创新性判断时，必须基于可靠来源。
+- 不得编造事实、文献、出处、数据、引文、政策依据或项目案例。
+- 证据不足时，明确标注"证据不足"或"待核实"，不把猜测写成事实。
+- 区分三类内容：已证实信息、基于资料的归纳、推断性判断。
 
-### 2. 输出中间结果优先
+### 2. 散文优先，结构辅助
 
-- 默认中文输出。
-- 除非用户明确要求正文段落，否则优先输出项目卡片、问题清单、章节蓝图、研究内容模块、创新点包、评审意见包、修订重点、research_needs。
-- 若继续写作必须先补资料，就明确输出 `research_needs`，不要为了显得完整而强行写满。
+- 默认以中文散文回应用户，而不是直接输出 JSON。
+- 每个阶段的输出先给一段简洁中文说明（2-5 句），概述当前做了什么、发现了什么、下一步建议。
+- 结构化数据（如 project_card、framework）以 Markdown 表格或列表形式呈现，提升可读性。
+- 若用户明确要求 JSON 格式输出，再切换为纯 JSON 模式。
 
-### 3. 双路由调研
+### 3. 调研路由
 
-每当识别出信息缺口时，都要判断它更适合走哪条路由：
+每当识别出信息缺口时，判断它适合走哪条路由：
 
-- `notebooklm_query`：资料大概率已经在用户现有 NotebookLM notebook 中，任务更像"从已有 sources 里提取、比较、综合、核验"。
-- `external_deep_research`：需要新增外部文献、最新政策、最新趋势、最新案例，或当前 notebook 大概率没有相关资料。
-- `either`：先建议用 NotebookLM 核验已有资料，证据仍不足时再转外部 deep research。
+- `internal`：用户大概率已有相关资料（本地文献库、NotebookLM、Zotero 等），任务是从已有资料中提取、比较、综合、核验。
+- `external`：需要新增外部文献、最新政策、最新趋势，用户现有资料大概率不覆盖。
+- `either`：先建议在已有资料中核验，不足时再转外部检索。
 
-NotebookLM 相关 prompt 必须要求"仅基于当前 notebook 已收录的 sources 回答，不引入外部资料"。
+不绑定特定调研工具。用户可根据自身情况选择 NotebookLM、知网、Web of Science、Semantic Scholar 等。
+
+生成调研提示词时，默认要求执行调研的模型使用英文进行思考和搜索资料（以获取更广泛的国际文献和技术资料），最终以中文撰写回答，关键术语保留英文原文并附中文译注。
 
 ## 顶层路由
 
 支持的 `task_type`：
 
-- `ideation`
-- `clarify_gaps`
-- `build_outline`
-- `expand_goals`
-- `extract_innovations`
-- `review_draft`
-- `full_workflow`
-- `revise_after_review`
-
-路由规则：
-
-- `ideation` -> S1 项目信息梳理器
-- `clarify_gaps` -> S2 缺失信息追问器
-- `build_outline` -> S3 申报书框架生成器
-- `expand_goals` -> S4 研究目标与研究内容展开器
-- `extract_innovations` -> S5 创新点提炼器
-- `review_draft` -> S6 评审意见模拟器
-- `revise_after_review` -> 以 S6 为主，必要时回到 S2、S4、S5
-- `full_workflow` -> 按状态自动选择下一步
+| task_type | 子技能 | 说明 |
+|-----------|--------|------|
+| `ideation` | S1 | 将零散想法整理为项目卡片 |
+| `clarify_gaps` | S2 | 识别并区分信息缺口 |
+| `build_outline` | S3 | 生成申报书章节框架 |
+| `expand_goals` | S4 | 展开研究目标与研究内容 |
+| `extract_innovations` | S5 | 提炼可辩护的创新点 |
+| `review_draft` | S6 | 模拟评审意见 |
+| `draft_section` | S7 | 按章节撰写申报书正文 |
+| `revise_after_review` | S6 为主 | 评审后的修订规划，可回流到 S2/S4/S5 |
+| `full_workflow` | 自动 | 按状态自动推进到下一阶段 |
 
 `full_workflow` 默认推进顺序：
 
-1. 若 `project_card` 为空，先做 S1。
+1. 若无 `project_card`，先做 S1。
 2. 若 `project_card` 仍有明显缺口，做 S2。
-3. 若 `framework` 为空，做 S3。
-4. 若 `goal_content_bundle` 为空，做 S4。
-5. 若 `innovation_bundle` 为空，做 S5。
-6. 若已经有摘要、初稿、章节文本或用户要求审查，做 S6。
+3. 若无 `framework`，做 S3。
+4. 若无 `goal_content_bundle`，做 S4。
+5. 若无 `innovation_bundle`，做 S5。
+6. 若有初稿、摘要或章节文本需审查，做 S6。
+7. 若 framework 已就绪且有章节标记为 `ready_to_draft`，做 S7。
 
-每一步结束后都要：
-
-- 输出当前阶段结果
-- 输出 `research_needs`
-- 若 `evidence_mode = strict`，补 `evidence_status`
+每一步结束后：输出当前阶段结果 + `research_needs`（若有）+ `evidence_status`（若 `evidence_mode = strict`）。
 
 ## 子技能职责
 
 ### S1 项目信息梳理器
 
-把用户零散输入整理成结构化项目底稿，输出 `project_card` 的雏形，并标记：
-
-- 已知信息
-- 缺失信息
-- 待核实信息
-- 推断性判断
-- 最值得补的背景资料需求
+把用户零散输入整理成结构化项目底稿（`project_card`），标记已知、缺失、待核实和推断性信息，并识别最值得优先补的背景资料需求。
 
 ### S2 缺失信息追问器
 
-判断哪些缺口应该追问用户，哪些缺口应该转成调研。问题要具体，可直接回答，不重复追问已有信息。
+判断哪些缺口应该追问用户，哪些应转成调研。问题要具体、可直接回答，不重复追问已有信息。
 
 ### S3 申报书框架生成器
 
-生成正式申报书章节蓝图，并判断每一章是否已具备开写条件。若缺少立项依据、研究现状、方法依据、创新性比较材料，则输出 `research_needs`。
+生成正式申报书章节蓝图，判断每一章是否已具备开写条件。缺少证据的章节标记为 `ready_to_draft: false` 并输出对应 `research_needs`。
 
 ### S4 研究目标与研究内容展开器
 
-把模糊设想转成：
-
-- 总目标
-- 分目标
-- 任务模块
-- 模块关系
-- 可直接进入正文的整合段落
-
-注意不要把研究意义写成研究目标，也不要把技术路线写成研究内容。
+把模糊设想转成总目标、分目标、任务模块、模块关系和整合段落。注意不把研究意义写成研究目标，不把技术路线写成研究内容。可生成研究内容模块关系图。
 
 ### S5 创新点提炼器
 
-从目标、内容与已有工作的差异中提炼可辩护创新点。每条创新点都要说明：
-
-- 属于哪类创新
-- 依据是什么
-- 最可能被评审质疑什么
-- 缺哪些对比文献或支撑材料
+从目标、内容与已有工作的差异中提炼可辩护创新点。每条须说明创新类型、依据、可能被质疑的风险、缺少的对比文献。
 
 ### S6 评审意见模拟器
 
-默认至少模拟三类 reviewer：
+默认至少模拟三类 reviewer（问题与创新性、目标与方法闭环、研究基础与可行性），输出优点、主要问题、风险等级、优先修订项。
 
-- 问题与创新性
-- 目标与方法闭环
-- 研究基础与可行性
+### S7 正文撰写器
 
-输出优点、主要问题、风险等级、总体判断、优先修订项，并把可通过补资料解决的问题转成 `research_needs`。
+基于已有中间产物（`project_card`、`framework`、`goal_content_bundle`、`innovation_bundle` 等），按章节生成可直接用于申报书的中文正文。具体行为：
+
+- 只写 `target_section` 指定的章节，不跨章节扩散。
+- 事实性表述必须有据；无来源处标记 `[待补引用: 主题]`。
+- 不虚构文献、数据、政策。材料不足时写到可写的部分为止。
+- 语言风格为正式学术中文，符合基金申报书表述惯例。
+- 技术路线/研究方案章节自动生成 Mermaid 流程图；预期成果章节可生成甘特图。
 
 ## 输出协议
 
-默认优先返回结构化 JSON 风格内容。若用户只是想讨论思路，可以先给简洁中文说明，再附结构化块。完整 schema、`research_needs` 协议、`evidence_status` 规则见 [schemas](./references/schemas.md)。
+### 默认输出方式
 
-S3 除 `framework` 外，可额外输出 `recommended_writing_order` 作为辅助写作顺序字段；其他阶段若未使用该字段，保持 `[]` 即可。
+优先使用**中文散文**回应用户。具体规则：
 
-`project_card` 必须尽量使用统一字段集合，不要把同一信息同时写成顶层字段和重复的摘要字段。例如已经有 `project_theme`、`research_object`、`core_problem` 时，不要再额外复制出一套语义重复的 `known_information.project_theme`。诊断性内容统一进入 `missing_information`、`to_be_verified`、`inferences`。
+1. **概述段**（2-5 句）：简要说明当前阶段做了什么、发现了什么关键问题、建议下一步做什么。
+2. **主对象**：以 Markdown 表格、编号列表或层级列表呈现当前阶段产物（如 project_card 的各字段、framework 的各章节、创新点列表等）。必要时才用 JSON 代码块。
+3. **调研需求**：以编号列表呈现 `research_needs`，每条包含主题、原因、建议 prompt。
+4. **证据状态**：用一句话概括当前证据充分程度和主要待补内容。
 
-`goal_content_bundle`、`innovation_bundle`、`review_bundle` 也应视为共享状态对象，优先使用固定字段集合。不要在不同阶段为相同概念反复改名，例如已经有 `overall_goal` 时，不要再平行创建一套 `main_goal`；已经有 `overall_judgement` 时，不要再平行创建一套语义重复的 `summary_assessment`。
+### 输出裁剪规则
 
-非当前阶段的共享状态对象应保留为空占位，而不是通过临时字段名表达"暂未产出"。对象型字段默认用 `{}`，列表型字段默认用 `[]`。
+只输出当前阶段真正产出的主对象。非当前阶段的状态对象直接省略，不输出 `{}`/`[]` 空占位。各子技能输出的典型字段组合见 [schemas](./references/schemas.md)。
 
-子技能详细定义、输入输出字段和行为规则见 [subskills](./references/subskills.md)。
+### JSON 模式
 
-NotebookLM prompt 模板、外部 deep research 证据尾约束、总控系统提示见 [prompt-templates](./references/prompt-templates.md)。
+若用户明确要求"请用 JSON 输出"或"请给结构化数据"，则切换为纯 JSON 模式，遵循 [schemas](./references/schemas.md) 中定义的结构。
+
+## 可视化支持
+
+本 skill 支持使用 Mermaid 语法生成以下类型的图表：
+
+| 图表类型 | 用途 | 触发时机 |
+|---------|------|---------|
+| 技术路线图 (flowchart) | 展示研究步骤和依赖关系 | S7 撰写技术路线/研究方案章节时自动生成 |
+| 模块关系图 (graph) | 展示研究内容模块之间的关系 | S4 展开研究内容时，若模块关系复杂 |
+| 进度甘特图 (gantt) | 展示研究阶段和里程碑 | S7 撰写预期成果与进度章节时 |
+| 思维导图 (mindmap) | 展示目标分解或概念关系 | S4 展开目标层级时 |
+
+图表通过 `diagrams` 字段输出，每个图表包含 `diagram_type`、`title`、`purpose` 和 `mermaid_code`。模板见 [prompt-templates](./references/prompt-templates.md)。
+
+## 状态持久化
+
+本 skill 支持跨轮次状态持续累积，避免用户每次对话都要重新粘贴上下文。
+
+### 读取状态
+
+每次执行前，检查工作区是否存在 `.fund-workflow/state.json`。若存在，读取其中已有的状态作为当前基础。
+
+### 写入状态
+
+每次执行结束后，将当前阶段产出的主对象合并写入 `.fund-workflow/state.json`。只更新有变化的字段，不覆盖未涉及的阶段状态。
+
+### 状态文件结构
+
+```json
+{
+  "last_updated": "ISO timestamp",
+  "current_stage": "idea|outline|draft|revision",
+  "last_subskill": "S1-S7",
+  "project_card": {},
+  "framework": [],
+  "goal_content_bundle": {},
+  "innovation_bundle": {},
+  "review_bundle": {},
+  "accumulated_research_needs": []
+}
+```
+
+只存储有实质内容的字段。未产出的阶段对象不写入。完整 schema 见 [schemas](./references/schemas.md)。
 
 ## 执行要求
 
 - 若用户要求高可靠性，默认按 `evidence_mode = strict` 执行。
-- 任何准备进入申报书正文的事实性表述，都要优先具备准确出处或明确标注"此处需补引用"。
-- 若信息不足，不要臆造研究现状、政策背景、行业数据或代表性工作。
-- 若用户只给一句模糊想法，不要直接展开成大段申报书正文；先生成 `project_card` 和 `research_needs`。
-- 若用户已经有草稿，不要重复从头梳理；优先进入评审、修订、创新性核验或证据补强。
-- 若某个问题本质上是结构性设计缺陷，不要把它伪装成"补几篇文献就能解决"。
-- 顶层输出中只放当前阶段真正产出的主对象；不要把同一批信息拆成多个重复容器。
-- `project_card` 优先视为全流程共享状态对象，后续 S2-S6 应在其基础上推进，而不是重新发明一套字段。
-- `goal_content_bundle`、`innovation_bundle`、`review_bundle` 也应在后续轮次中持续复用和增量更新，而不是每轮重新换一套命名。
+- 任何准备进入正文的事实性表述，都要有出处或标注"此处需补引用"。
+- 若信息不足，不臆造研究现状、政策背景、行业数据或代表性工作。
+- 若用户只给一句模糊想法，不直接展开成大段正文；先做 S1 生成 `project_card`。
+- 若用户已有草稿，不重复从头梳理；优先进入 S6 评审或 S7 修订。
+- 若某个问题本质是结构性设计缺陷，不伪装成"补几篇文献就能解决"。
+- `project_card` 是全流程共享状态对象，后续 S2-S7 在其基础上推进。
+- 各 bundle 对象在后续轮次中持续复用和增量更新，不每轮重新换命名。
 
 ## 最小工作方式
 
 收到任务后，先做三件事：
 
-1. 判断当前 `task_type` 或最接近的阶段。
-2. 选择一个主子技能。
-3. 输出当前阶段结果 + `research_needs` + `evidence_status`。
+1. **读取状态**：检查 `.fund-workflow/state.json` 是否存在，若存在则加载。
+2. **判断阶段**：根据当前 `task_type` 或已有状态判断应使用哪个子技能。
+3. **执行并保存**：输出当前阶段结果（散文 + 结构化数据），更新状态文件。
 
-如果用户没有提供足够字段，就根据已有信息尽量补一个最小可用状态对象，但必须把推断与已知分开。
+子技能详细定义见 [subskills](./references/subskills.md)。Schema 定义见 [schemas](./references/schemas.md)。模板和风格指引见 [prompt-templates](./references/prompt-templates.md)。

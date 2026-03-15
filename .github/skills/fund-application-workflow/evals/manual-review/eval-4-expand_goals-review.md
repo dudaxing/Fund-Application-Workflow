@@ -174,8 +174,8 @@
 - Design risk visibility: Pass
 - Evidence discipline: Pass
 - Residual issues:
-  - `project_card` 为空意味着这是纯 S4 样例；若实际运行 full_workflow，通常应带着已有 project_card 进入本阶段。
-  - 若正式做自动 benchmark，需要允许 `goal_content_bundle.design_risks` 非空且不把它误判为负面输出噪音。
+ - `project_card` 为空意味着这是纯 S4 样例；若实际运行 full_workflow，通常应带着已有 project_card 进入本阶段。
+ - 若正式做自动 benchmark，需要允许 `goal_content_bundle.design_risks` 非空且不把它误判为负面输出噪音。
 
 ## Verdict
 

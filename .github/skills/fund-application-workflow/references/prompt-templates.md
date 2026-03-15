@@ -1,28 +1,8 @@
 # Prompt Templates
 
-## NotebookLM Prompt Template
+## 调研 Prompt 的通用尾部约束
 
-当 `retrieval_route = notebooklm_query` 时，`suggested_prompt` 默认优先使用以下模板思路：
-
-```text
-请仅基于当前 notebook 已收录的 sources 回答，不要引入外部资料。
-请围绕【主题】完成以下任务：
-1. 提取与该主题最直接相关的文献/资料
-2. 总结这些资料中已经证实的事实性信息
-3. 归纳这些资料共同支持的结论
-4. 明确哪些判断只是推断，哪些结论证据仍不足
-5. 对关键判断给出准确出处和引用线索
-
-请特别输出：
-- 代表性来源
-- 关键证据点
-- 资料之间的一致与分歧
-- 对基金申报书【某一部分】最可直接使用的表述依据
-```
-
-## External Deep Research Prompt Tail
-
-当 `retrieval_route = external_deep_research` 时，所有 `suggested_prompt` 末尾应追加以下证据约束：
+所有 `research_needs` 中的 `suggested_prompt`，无论走 internal 还是 external 路由，都应在末尾隐含以下约束（由全局默认覆盖，不必每次手写）：
 
 ```text
 请优先使用可靠来源，包括高质量综述、权威期刊/会议论文、官方政策文件、官方统计数据库、代表性项目资料。
@@ -32,7 +12,18 @@
 2. 基于资料的归纳
 3. 尚待验证的推断
 对于关键判断，请附上对应来源信息。
+语言策略：请使用英文进行思考、检索和资料查找以获取更全面的信息，最终以中文撰写回答。关键术语保留英文原文并在首次出现时附中文译注。
 ```
+
+## Internal 路由 Prompt 前缀
+
+当 `retrieval_route = internal` 时，`suggested_prompt` 开头应追加：
+
+```text
+请仅基于已有资料回答，不要引入外部资料。
+```
+
+此前缀适用于任何内部资料库（如 NotebookLM、Zotero 本地库、已导入的文献集合等），不绑定特定产品。
 
 ## High-Level System Prompt
 
@@ -40,46 +31,113 @@
 你是"基金申报全流程协同写作 Skill"。
 
 你的任务不是盲目生成一篇完整申请书，而是围绕项目申报全过程，完成以下工作：
-1. 梳理项目想法
-2. 识别缺口
-3. 生成高质量 research_needs
-4. 决定这些调研需求应走 NotebookLM 查询还是外部 deep research
-5. 生成申报书框架
-6. 展开研究目标与研究内容
-7. 提炼并验证创新点
-8. 模拟评审意见并提出修订方向
+1. 梳理项目想法（S1）
+2. 识别缺口并追问（S2）
+3. 生成申报书框架（S3）
+4. 展开研究目标与研究内容（S4）
+5. 提炼并验证创新点（S5）
+6. 模拟评审意见并提出修订方向（S6）
+7. 按章节撰写可用于申报书的正文（S7）
 
 你必须严格遵守以下原则：
 - 不编造事实、文献、出处、数据或政策依据
-- 凡涉及研究现状、发展趋势、方法比较、创新性判断、政策和数据，必须基于可靠资料
 - 若证据不足，明确标注"证据不足"或"待核实"
 - 明确区分：已证实事实、基于资料的归纳、推断性判断
-- 优先输出结构化中间结果，而不是空泛正文
+- 默认以中文散文回应用户，结构化数据作为辅助附件
 - 在每一步都判断是否需要 research_needs
-- 对每条 research_needs，都要输出：
-  - retrieval_route
-  - notebooklm_applicability
-  - source_requirements
-  - citation_expectations
-  - suggested_prompt
-- 若相关材料已在 NotebookLM notebook 中，则优先生成 notebooklm_query 型 prompt
-- 若当前 notebook 大概率没有相关资料，则生成 external_deep_research 型 prompt
-- 若用户要求高可靠性，则默认 evidence_mode = strict
 - 默认中文输出
+
+输出格式要求：
+- 先给一段简洁中文说明，概述当前阶段做了什么、发现了什么、下一步建议
+- 然后给出当前阶段主对象，可用 Markdown 列表/表格增强可读性
+- research_needs 以编号列表呈现
+- 只输出当前阶段有实质内容的字段，不输出空占位
+```
+
+## S7 正文撰写的风格指引
+
+```text
+撰写申报书正文时，请遵循以下风格要求：
+
+1. 语体：正式学术中文，符合国内基金申报书的表述惯例。
+2. 段落结构：每段围绕一个核心论点展开，段首给出主题句，段内展开论据和分析。
+3. 证据引用：事实性表述需标注来源。若当前无来源，在文中标记 [待补引用: 主题描述]。
+4. 避免：口语化表达、营销推销语气、空泛定性判断（如"具有重要意义"需改为具体说明什么意义）。
+5. 衔接：章节之间和段落之间使用逻辑连接词，保持论证链条连贯。
+6. 创新点表述：采用"相比已有工作 → 本项目的差异化做法 → 预期贡献"的三段式结构。
+```
+
+## Mermaid 可视化模板
+
+### 技术路线图模板
+
+```text
+当需要生成技术路线图时，使用 Mermaid flowchart 语法。典型结构：
+
+flowchart TD
+    A[需求分析与场景建模] --> B[系统/方法设计]
+    B --> C[核心模块开发]
+    B --> D[数据采集与处理]
+    C --> E[系统集成与测试]
+    D --> E
+    E --> F[实验验证与效果评估]
+    F --> G[成果总结与推广]
+
+节点命名要求：
+- 使用中文
+- 每个节点对应一个研究任务或阶段
+- 连线体现依赖和时序关系
+- 可用子图 (subgraph) 对模块分组
+```
+
+### 研究内容模块关系图模板
+
+```text
+当需要展示研究内容模块之间的关系时，使用 Mermaid graph 语法：
+
+graph LR
+    subgraph 基础层
+        M1[模块1: 需求识别]
+    end
+    subgraph 核心层
+        M2[模块2: 方法/系统设计]
+        M3[模块3: 实现与开发]
+    end
+    subgraph 验证层
+        M4[模块4: 实验与评估]
+    end
+    M1 -->|输入需求| M2
+    M2 -->|设计方案| M3
+    M3 -->|系统原型| M4
+    M4 -.->|反馈修正| M2
+```
+
+### 研究进度甘特图模板
+
+```text
+当需要展示研究进度时，使用 Mermaid gantt 语法：
+
+gantt
+    title 项目研究进度
+    dateFormat YYYY-MM
+    axisFormat %Y-%m
+
+    section 第一阶段
+    需求调研与文献综述    :a1, 2026-01, 3M
+    方案设计              :a2, after a1, 2M
+
+    section 第二阶段
+    系统开发              :b1, after a2, 4M
+    数据采集              :b2, after a2, 3M
+
+    section 第三阶段
+    实验验证              :c1, after b1, 3M
+    论文撰写与成果总结    :c2, after c1, 2M
 ```
 
 ## Implementation Notes
 
-1. 建议将 6 个子技能做成内部函数或模块。
-2. 顶层 skill 负责状态管理和路由。
-3. `research_needs` 生成逻辑应集中复用，避免每个子技能散写。
-4. NotebookLM 查询 prompt 与 external deep research prompt 应分别模板化。
-5. 若系统支持记忆或状态持久化，建议维护：
-   - `project_card`
-   - `framework`
-   - `goal_content_bundle`
-   - `innovation_bundle`
-   - `review_bundle`
-   - `accumulated_research_needs`
-   - `evidence_status_history`
-6. 所有面向现实世界的判断都要保留"待核实"通道，不能强行给结论。
+1. 7 个子技能共享同一套状态对象，通过状态文件 `.fund-workflow/state.json` 跨轮次持久化。
+2. `research_needs` 生成逻辑应集中复用，遵循简化后的 7 字段结构。
+3. 每次执行前读取状态文件，执行后更新。
+4. 所有面向现实世界的判断都要保留"待核实"通道。
