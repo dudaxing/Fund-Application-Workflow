@@ -11,7 +11,7 @@
   "current_section": "",
   "user_input": "",
   "context_history": [],
-  "existing_materials": [],
+  "existing_materials": [],  // 文件路径列表，支持 .md / .pdf / .docx 格式，也可传入目录路径
   "current_text": "",
   "project_card": {},
   "framework": [],
@@ -184,6 +184,14 @@ S7 正文撰写器的输出对象。
   "target_section": "",
   "prose": "",
   "word_count": 0,
+  "inline_citations": [
+    {
+      "claim": "",
+      "source": "",
+      "source_type": "literature|report|data|policy",
+      "source_file": ""
+    }
+  ],
   "citation_placeholders": [
     {
       "location": "",
@@ -197,7 +205,12 @@ S7 正文撰写器的输出对象。
 ### 字段说明
 
 - `target_section`：本次撰写的章节名称。
-- `prose`：可直接用于申报书的中文正文段落。
+- `prose`：可直接用于申报书的中文正文段落。正文中每个事实性论述须在行文中体现可追溯的来源引用。
+- `inline_citations`：正文中已标注来源的引用清单，用于追溯验证。
+  - `claim`：被引用的论述内容摘要。
+  - `source`：来源描述（如"Yuan et al., 2026, HYDRA"或"SWF 2025年度报告"）。
+  - `source_type`：来源类型——`literature`（学术文献）、`report`（调研报告/机构报告）、`data`（实验/统计数据）、`policy`（政策文件）。
+  - `source_file`：来源所在的用户提供的调研文件名（如有）。
 - `citation_placeholders`：正文中标记了"待补引用"的位置及其所需引用类型。
 - `evidence_gaps`：本章节正文中因证据不足而无法展开的部分。
 
@@ -315,3 +328,15 @@ S7 正文撰写器的输出对象。
 ```
 
 只存储有实质内容的字段。未产出的阶段对象不写入状态文件。
+
+## Input Material Format Support
+
+`existing_materials` 字段支持以下格式的文件路径：
+
+| 格式 | 扩展名 | 处理方式 |
+|------|--------|---------|
+| Markdown | `.md` | 直接读取全文 |
+| PDF | `.pdf` | 使用 PDF 读取工具完整提取所有页面 |
+| Word | `.docx` | 使用 Word 读取工具提取段落、表格和列表 |
+
+也可传入目录路径，skill 将自动扫描目录下所有支持格式的文件并逐一读取。读取后将内容与来源文件名绑定，确保后续引用可追溯。
